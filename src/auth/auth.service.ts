@@ -6,19 +6,22 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcryptjs';
-import { User, UserRole } from './entities/user.entity.ts';
+import { User, UserRole } from './entities/user.entity';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
-import jwt from 'jsonwebtoken';
+import { JwtService } from '@nestjs/jwt';
 
 interface JwtPayload {
   sub: number;
-  role: string;
+  role: UserRole;
 }
 
 @Injectable()
 export class AuthService {
-  constructor(@InjectRepository(User) private userRepo: Repository<User>) {}
+  constructor(
+    @InjectRepository(User) private userRepo: Repository<User>,
+    private jwtService: JwtService, // Inject JwtService
+  ) {}
 
   async register(dto: RegisterDto): Promise<User> {
     const exist = await this.userRepo.findOne({
@@ -45,6 +48,7 @@ export class AuthService {
   async login(dto: LoginDto): Promise<{ access_token: string }> {
     const user = await this.userRepo.findOne({
       where: { username: dto.username },
+      select: ['id', 'username', 'password', 'role'],
     });
     if (!user) throw new UnauthorizedException('Invalid credentials');
 
@@ -52,14 +56,9 @@ export class AuthService {
     if (!valid) throw new UnauthorizedException('Invalid credentials');
 
     const payload: JwtPayload = { sub: user.id, role: user.role };
-
-    const token = jwt.sign(
-      payload,
-      process.env.JWT_SECRET ?? 'default_secret',
-      {
-        expiresIn: '1h',
-      },
-    ) as string;
+    const token: string = this.jwtService.sign(payload, {
+      expiresIn: '1h',
+    });
 
     return { access_token: token };
   }
