@@ -6,6 +6,7 @@ import { Task } from './tasks/entities/task.entity.js';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { ProfileModule } from './profile/profile.module';
+import { TasksModule } from './tasks/tasks.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { ProfileModule } from './profile/profile.module';
     }),
     AuthModule,
     UsersModule,
+    TasksModule,
     ProfileModule,
   ],
 })
