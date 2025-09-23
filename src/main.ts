@@ -2,14 +2,27 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import { AllExceptionsFilter } from './common/filters/http-exception.filter';
+import { ValidationPipe } from '@nestjs/common';
+import * as fs from 'fs';
+import { join } from 'path';
 
 async function bootstrap() {
+  const uploadPath = process.env.UPLOAD_PATH || './Uploads';
+  if (!fs.existsSync(uploadPath)) {
+    fs.mkdirSync(uploadPath, { recursive: true });
+  }
+
   const app = await NestFactory.create(AppModule);
+  app.useGlobalFilters(new AllExceptionsFilter());
+  app.useGlobalPipes(
+    new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }),
+  );
 
   app.enableCors();
   const config = new DocumentBuilder()
-    .setTitle('Task Management Auth API')
-    .setDescription('Auth endpoints for register & login')
+    .setTitle('Task Management')
+    .setDescription(' endpoints')
     .setVersion('1.0')
     .addBearerAuth(
       {

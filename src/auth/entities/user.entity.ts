@@ -7,6 +7,7 @@ import {
   OneToMany,
 } from 'typeorm';
 import { Task } from '../../tasks/entities/task.entity';
+
 export enum UserRole {
   USER = 'USER',
   ADMIN = 'ADMIN',
@@ -33,6 +34,10 @@ export class User {
   role: UserRole;
 
   @OneToMany(() => Task, (task) => task.user, { cascade: true })
+  @Column({ nullable: true })
+  profileImage?: string; // filename or path
+
+  @OneToMany(() => Task, (task) => task.owner)
   tasks: Task[];
 
   @CreateDateColumn()
