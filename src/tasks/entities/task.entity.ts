@@ -11,10 +11,10 @@ import { User } from '../../auth/entities/user.entity';
 @Entity()
 export class Task {
   @PrimaryGeneratedColumn()
-  id: number;
+  id!: number;
 
   @Column()
-  title: string; // نام تسک
+  title!: string; // نام تسک
 
   @Column({ type: 'text', nullable: true })
   description?: string;
@@ -23,11 +23,11 @@ export class Task {
   attachment?: string; // filename/path
 
   @ManyToOne(() => User, (user) => user.tasks, { onDelete: 'CASCADE' })
-  owner: User;
+  owner!: User;
 
   @CreateDateColumn()
-  createdAt: Date;
+  createdAt!: Date;
 
   @UpdateDateColumn()
-  updatedAt: Date;
+  updatedAt!: Date;
 }

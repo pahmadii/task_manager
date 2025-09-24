@@ -16,33 +16,35 @@ export enum UserRole {
 @Entity()
 export class User {
   @PrimaryGeneratedColumn()
-  id: number;
+  id!: number;
 
   @Column({ unique: true })
-  username: string;
+  username!: string;
 
   @Column({ unique: true })
-  email: string;
+  email!: string;
 
   @Column({ unique: true })
-  phone: string;
+  phone!: string;
 
   @Column({ select: false })
-  password: string;
+  password!: string;
 
   @Column({ type: 'enum', enum: UserRole, default: UserRole.USER })
-  role: UserRole;
+  role!: UserRole;
 
-  @OneToMany(() => Task, (task) => task.user, { cascade: true })
   @Column({ nullable: true })
   profileImage?: string; // filename or path
 
+  @Column({ nullable: true })
+  bio?: string;
+
   @OneToMany(() => Task, (task) => task.owner)
-  tasks: Task[];
+  tasks!: Task[];
 
   @CreateDateColumn()
-  createdAt: Date;
+  createdAt!: Date;
 
   @UpdateDateColumn()
-  updatedAt: Date;
+  updatedAt!: Date;
 }
