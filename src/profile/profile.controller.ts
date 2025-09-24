@@ -101,7 +101,7 @@ export class ProfileController {
   }
 
   @Get('avatar/:filename')
-  async download(@Param('filename') filename: string, @Res() res: Response) {
+  download(@Param('filename') filename: string, @Res() res: Response) {
     const filePath = join(
       process.cwd(),
       process.env.UPLOAD_PATH || 'Uploads',
