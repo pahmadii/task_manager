@@ -21,8 +21,6 @@
     "migration:gen": "ts-node -r tsconfig-paths/register -P tsconfig-cli.json ./node_modules/typeorm/cli.js migration:generate ./migrations",
     "migration:run": "ts-node -r tsconfig-paths/register -P tsconfig-cli.json ./node_modules/typeorm/cli.js migration:run -d ./data-source.ts",
     "migration:revert": "ts-node -r tsconfig-paths/register -P tsconfig-cli.json ./node_modules/typeorm/cli.js migration:revert -d ./data-source.ts"
-
-    
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
@@ -38,13 +36,15 @@
     "class-validator": "^0.14.2",
     "dotenv": "^17.2.2",
     "jsonwebtoken": "^9.0.2",
+    "nest-winston": "^1.10.2",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
     "passport-local": "^1.0.0",
     "pg": "^8.16.3",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
-    "swagger-ui-express": "^5.0.1"
+    "swagger-ui-express": "^5.0.1",
+    "winston": "^3.17.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",

@@ -1,6 +1,8 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
+import { WinstonModule } from 'nest-winston';
+import * as winston from 'winston';
 import { User } from './auth/entities/user.entity.js';
 import { Task } from './tasks/entities/task.entity.js';
 import { AuthModule } from './auth/auth.module';
@@ -21,6 +23,16 @@ import { TasksModule } from './tasks/tasks.module';
       entities: [User, Task],
       synchronize: false,
       logging: process.env.NODE_ENV !== 'production',
+    }),
+    WinstonModule.forRoot({
+      transports: [
+        new winston.transports.Console({
+          format: winston.format.combine(
+            winston.format.timestamp(),
+            winston.format.simple(),
+          ),
+        }),
+      ],
     }),
     AuthModule,
     UsersModule,

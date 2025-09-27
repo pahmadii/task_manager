@@ -3,6 +3,7 @@ import {
   NotFoundException,
   ForbiddenException,
   BadRequestException,
+  Inject,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -12,12 +13,16 @@ import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { join } from 'path';
 import * as fs from 'fs';
+import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
+import { Logger as WinstonLogger } from 'winston';
 
 @Injectable()
 export class TasksService {
   constructor(
     @InjectRepository(Task) private taskRepo: Repository<Task>,
     @InjectRepository(User) private userRepo: Repository<User>,
+    @Inject(WINSTON_MODULE_NEST_PROVIDER)
+    private readonly logger: WinstonLogger,
   ) {}
 
   async create(
@@ -26,14 +31,25 @@ export class TasksService {
     filename?: string,
   ): Promise<Task> {
     const owner = await this.userRepo.findOne({ where: { id: userId } });
-    if (!owner) throw new NotFoundException('Owner not found');
+    if (!owner) {
+      this.logger.error(
+        `Task creation failed: owner not found - userId: ${userId}`,
+        { context: 'TasksService' },
+      );
+      throw new NotFoundException('Owner not found');
+    }
 
     const task: Task = this.taskRepo.create({
       ...dto,
       owner,
       attachment: filename,
     });
-    return this.taskRepo.save(task);
+    const savedTask = await this.taskRepo.save(task);
+    this.logger.info(
+      `Task created successfully: ${task.title}, userId: ${userId}`,
+      { context: 'TasksService' },
+    );
+    return savedTask;
   }
 
   async findOne(userId: number, id: number): Promise<Task> {
@@ -41,8 +57,21 @@ export class TasksService {
       where: { id },
       relations: ['owner'],
     });
-    if (!task) throw new NotFoundException('Task not found');
-    if (task.owner.id !== userId) throw new ForbiddenException('Access denied');
+    if (!task) {
+      this.logger.error(`Task not found: taskId: ${id}`, {
+        context: 'TasksService',
+      });
+      throw new NotFoundException('Task not found');
+    }
+    if (task.owner.id !== userId) {
+      this.logger.error(`Access denied for taskId: ${id}, userId: ${userId}`, {
+        context: 'TasksService',
+      });
+      throw new ForbiddenException('Access denied');
+    }
+    this.logger.info(`Task fetched: taskId: ${id}, userId: ${userId}`, {
+      context: 'TasksService',
+    });
     return task;
   }
 
@@ -63,7 +92,21 @@ export class TasksService {
       if (fs.existsSync(oldPath)) {
         try {
           fs.unlinkSync(oldPath);
-        } catch (err) {
+          this.logger.info(`Old attachment deleted for taskId: ${id}`, {
+            context: 'TasksService',
+          });
+        } catch (err: unknown) {
+          if (err instanceof Error) {
+            this.logger.error(
+              `Failed to delete old attachment for taskId: ${id}. Error: ${err.message}`,
+              { context: 'TasksService' },
+            );
+          } else {
+            this.logger.error(
+              `Failed to delete old attachment for taskId: ${id}. Unknown error`,
+              { context: 'TasksService' },
+            );
+          }
           throw new BadRequestException('Failed to delete old attachment');
         }
       }
@@ -71,7 +114,11 @@ export class TasksService {
 
     Object.assign(task, dto);
     if (filename) task.attachment = filename;
-    return this.taskRepo.save(task);
+    const updatedTask = await this.taskRepo.save(task);
+    this.logger.info(`Task updated: taskId: ${id}, userId: ${userId}`, {
+      context: 'TasksService',
+    });
+    return updatedTask;
   }
 
   async remove(userId: number, id: number): Promise<void> {
@@ -86,13 +133,30 @@ export class TasksService {
       if (fs.existsSync(filePath)) {
         try {
           fs.unlinkSync(filePath);
-        } catch (err) {
-          throw new BadRequestException('Failed to delete task attachment');
+          this.logger.info(`Attachment deleted for taskId: ${id}`, {
+            context: 'TasksService',
+          });
+        } catch (err: unknown) {
+          if (err instanceof Error) {
+            this.logger.error(
+              `Failed to delete old attachment for taskId: ${id}. Error: ${err.message}`,
+              { context: 'TasksService' },
+            );
+          } else {
+            this.logger.error(
+              `Failed to delete old attachment for taskId: ${id}. Unknown error`,
+              { context: 'TasksService' },
+            );
+          }
+          throw new BadRequestException('Failed to delete old attachment');
         }
       }
     }
 
     await this.taskRepo.remove(task);
+    this.logger.info(`Task removed: taskId: ${id}, userId: ${userId}`, {
+      context: 'TasksService',
+    });
   }
 
   async findAll(
@@ -130,12 +194,25 @@ export class TasksService {
     qb.skip(skip).take(limit);
 
     const [data, total] = await qb.getManyAndCount();
+    this.logger.info(`Fetched task list for userId: ${userId}, page: ${page}`, {
+      context: 'TasksService',
+    });
+
     return { data, total, page, limit };
   }
 
   async downloadAttachment(userId: number, id: number): Promise<string> {
     const task = await this.findOne(userId, id);
-    if (!task.attachment) throw new NotFoundException('No attachment found');
+    if (!task.attachment) {
+      this.logger.error(`No attachment found for taskId: ${id}`, {
+        context: 'TasksService',
+      });
+      throw new NotFoundException('No attachment found');
+    }
+    this.logger.info(`Attachment fetched for taskId: ${id}`, {
+      context: 'TasksService',
+    });
+
     return task.attachment;
   }
 }

@@ -2,7 +2,9 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
-import { AllExceptionsFilter } from './common/filters/http-exception.filter';
+import { WinstonLogger } from './common/filters/winston.logger';
+import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
+import { AllExceptionsFilter } from './common/filters/all-exception.filter';
 import { ValidationPipe } from '@nestjs/common';
 import * as fs from 'fs';
 import { join } from 'path';
@@ -13,8 +15,10 @@ async function bootstrap() {
     fs.mkdirSync(uploadPath, { recursive: true });
   }
 
-  const app = await NestFactory.create(AppModule);
-  app.useGlobalFilters(new AllExceptionsFilter());
+  const app = await NestFactory.create(AppModule, { logger: WinstonLogger });
+  app.useGlobalFilters(
+    new AllExceptionsFilter(app.get(WINSTON_MODULE_NEST_PROVIDER)),
+  );
   app.useGlobalPipes(
     new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }),
   );
