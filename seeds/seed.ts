@@ -8,6 +8,19 @@ import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from '../src/app.module';
 
+const requiredEnvVars = [
+  'ADMIN_USERNAME',
+  'ADMIN_EMAIL',
+  'ADMIN_PHONE',
+  'ADMIN_PASSWORD',
+];
+
+requiredEnvVars.forEach((key) => {
+  if (!process.env[key]) {
+    throw new Error(`Missing required environment variable: ${key}`);
+  }
+});
+
 async function runSeed() {
   const appContext = await NestFactory.createApplicationContext(AppModule, {
     logger: false,
