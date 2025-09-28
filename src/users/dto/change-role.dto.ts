@@ -5,5 +5,5 @@ import { IsEnum } from 'class-validator';
 export class ChangeRoleDto {
   @ApiProperty({ enum: UserRole, example: UserRole.ADMIN })
   @IsEnum(UserRole)
-  role: UserRole;
+  role!: UserRole;
 }
