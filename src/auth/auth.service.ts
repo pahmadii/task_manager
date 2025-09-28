@@ -82,7 +82,7 @@ export class AuthService {
 
     const payload: JwtPayload = { sub: user.id, role: user.role };
     const token: string = this.jwtService.sign(payload, {
-      expiresIn: '1h',
+      expiresIn: process.env.JWT_EXPIRES_IN!,
     });
 
     this.logger.info(`User logged in successfully: ${user.username}`, {
