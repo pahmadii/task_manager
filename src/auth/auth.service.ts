@@ -62,4 +62,24 @@ export class AuthService {
 
     return { access_token: token };
   }
+  async refreshToken(
+    userId: number,
+    role: UserRole,
+  ): Promise<{ access_token: string }> {
+    const payload: JwtPayload = { sub: userId, role };
+    const newToken = this.jwtService.sign(payload, {
+      expiresIn: process.env.JWT_EXPIRES_IN!,
+    });
+
+    this.logger.info(`Token refreshed for userId: ${userId}`, {
+      context: 'AuthService',
+    });
+
+    return { access_token: newToken };
+  }
+
+  async logout(): Promise<{ message: string }> {
+    this.logger.info(`User logged out`, { context: 'AuthService' });
+    return { message: 'Logged out successfully' };
+  }
 }
