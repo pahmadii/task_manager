@@ -7,10 +7,12 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { UserRole } from '../../auth/entities/user.entity';
+import { Request } from 'express';
 
 interface RequestUser {
   id: number;
   role: UserRole;
+  email: string;
 }
 
 @Injectable()
@@ -18,13 +20,16 @@ export class RolesGuard implements CanActivate {
   constructor(private reflector: Reflector) {}
 
   canActivate(context: ExecutionContext): boolean {
-    const roles = this.reflector.get<UserRole[]>('roles', context.getHandler());
-    if (!roles) return true;
+    const roles = this.reflector.getAllAndOverride<UserRole[]>('roles', [
+      context.getHandler(),
+      context.getClass(),
+    ]);
+    if (!roles || roles.length === 0) return true;
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    const request = context.switchToHttp().getRequest();
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-    const user = request.user as RequestUser;
+    const request = context
+      .switchToHttp()
+      .getRequest<Request & { user: RequestUser }>();
+    const user = request.user;
 
     if (!user) throw new UnauthorizedException('User not authenticated');
     if (!roles.includes(user.role)) {
