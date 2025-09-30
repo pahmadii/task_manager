@@ -3,8 +3,14 @@ import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { ApiTags } from '@nestjs/swagger';
-import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
+import { RefreshTokenDto } from './dto/refresh-token.dto';
+import { Request } from 'express';
 
+interface JwtRequestUser {
+  id: string;
+  role: string;
+}
 
 @ApiTags('auth')
 @Controller('auth')
@@ -21,15 +27,14 @@ export class AuthController {
     return this.authService.login(dto);
   }
 
-  @UseGuards(JwtAuthGuard)
   @Post('refresh')
-  refresh(@Req() req: any) {
-    return this.authService.refreshToken(req.user.id, req.user.role);
+  refresh(@Body() dto: RefreshTokenDto) {
+    return this.authService.refresh(dto.refresh_token);
   }
 
   @UseGuards(JwtAuthGuard)
   @Get('logout')
-  logout() {
-    return this.authService.logout();
+  logout(@Req() req: Request & { user: JwtRequestUser }) {
+    return this.authService.logout(req);
   }
 }
