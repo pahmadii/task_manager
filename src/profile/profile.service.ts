@@ -10,14 +10,14 @@ import { User } from '../auth/entities/user.entity';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import * as fs from 'fs';
 import { join } from 'path';
-import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
+import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { Logger as WinstonLogger } from 'winston';
 
 @Injectable()
 export class ProfileService {
   constructor(
     @InjectRepository(User) private userRepo: Repository<User>,
-    @Inject(WINSTON_MODULE_NEST_PROVIDER)
+    @Inject(WINSTON_MODULE_PROVIDER)
     private readonly logger: WinstonLogger,
   ) {}
 

@@ -13,7 +13,7 @@ import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { join } from 'path';
 import * as fs from 'fs';
-import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
+import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { Logger as WinstonLogger } from 'winston';
 
 @Injectable()
@@ -21,7 +21,7 @@ export class TasksService {
   constructor(
     @InjectRepository(Task) private taskRepo: Repository<Task>,
     @InjectRepository(User) private userRepo: Repository<User>,
-    @Inject(WINSTON_MODULE_NEST_PROVIDER)
+    @Inject(WINSTON_MODULE_PROVIDER)
     private readonly logger: WinstonLogger,
   ) {}
 

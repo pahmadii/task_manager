@@ -33,6 +33,7 @@ import { TasksModule } from './tasks/tasks.module';
           ),
         }),
       ],
+      level: 'info',
     }),
     AuthModule,
     UsersModule,
