@@ -9,6 +9,10 @@ import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { ProfileModule } from './profile/profile.module';
 import { TasksModule } from './tasks/tasks.module';
+import { Permission } from './iam/entities/permission.entity';
+import { PermissionsModule } from './iam/permissions.module';
+
+
 
 @Module({
   imports: [
@@ -20,7 +24,7 @@ import { TasksModule } from './tasks/tasks.module';
       username: process.env.DB_USER,
       password: process.env.DB_PASS,
       database: process.env.DB_NAME,
-      entities: [User, Task],
+      entities: [User, Task, Permission],
       synchronize: false,
       logging: process.env.NODE_ENV !== 'production',
     }),
@@ -39,6 +43,7 @@ import { TasksModule } from './tasks/tasks.module';
     UsersModule,
     TasksModule,
     ProfileModule,
+    PermissionsModule,
   ],
 })
 export class AppModule {}
