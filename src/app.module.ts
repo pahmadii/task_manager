@@ -11,8 +11,8 @@ import { ProfileModule } from './profile/profile.module';
 import { TasksModule } from './tasks/tasks.module';
 import { Permission } from './iam/entities/permission.entity';
 import { PermissionsModule } from './iam/permissions.module';
-
-
+import { Role } from './role/entities/role.entity';
+import { RoleModule } from './role/role.module';
 
 @Module({
   imports: [
@@ -24,7 +24,7 @@ import { PermissionsModule } from './iam/permissions.module';
       username: process.env.DB_USER,
       password: process.env.DB_PASS,
       database: process.env.DB_NAME,
-      entities: [User, Task, Permission],
+      entities: [User, Task, Permission, Role],
       synchronize: false,
       logging: process.env.NODE_ENV !== 'production',
     }),
@@ -44,6 +44,7 @@ import { PermissionsModule } from './iam/permissions.module';
     TasksModule,
     ProfileModule,
     PermissionsModule,
+    RoleModule,
   ],
 })
 export class AppModule {}
