@@ -5,8 +5,11 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   OneToMany,
+  ManyToMany,
+  JoinTable,
 } from 'typeorm';
 import { Task } from '../../tasks/entities/task.entity';
+import { Role } from '../../role/entities/role.entity';
 
 export enum UserRole {
   USER = 'USER',
@@ -41,6 +44,14 @@ export class User {
 
   @OneToMany(() => Task, (task) => task.owner)
   tasks!: Task[];
+
+  @ManyToMany(() => Role, (role) => role.users, { eager: true })
+  @JoinTable({
+    name: 'user_roles',
+    joinColumn: { name: 'user_id', referencedColumnName: 'id' },
+    inverseJoinColumn: { name: 'role_id', referencedColumnName: 'id' },
+  })
+  roles?: Role[];
 
   @CreateDateColumn()
   createdAt!: Date;
