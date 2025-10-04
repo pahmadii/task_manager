@@ -3,6 +3,7 @@ import {
   Get,
   Param,
   Patch,
+  Post,
   Body,
   Delete,
   UseGuards,
@@ -16,6 +17,8 @@ import { Roles } from '../common/decorators/roles.decorator';
 import { ApiTags, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { ChangeRoleDto } from './dto/change-role.dto';
+import { CreateUserDto } from './dto/create-user.dto';
+import { AssignRolesDto } from './dto/assign-roles.dto';
 
 @ApiTags('users')
 @ApiBearerAuth('jwt')
@@ -24,6 +27,11 @@ import { ChangeRoleDto } from './dto/change-role.dto';
 @Roles(UserRole.ADMIN)
 export class UsersController {
   constructor(private usersService: UsersService) {}
+
+  @Post()
+  create(@Body() dto: CreateUserDto) {
+    return this.usersService.createUser(dto);
+  }
 
   @Get()
   @ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
@@ -73,6 +81,11 @@ export class UsersController {
   @Patch(':id/role')
   changeRole(@Param('id') id: string, @Body() dto: ChangeRoleDto) {
     return this.usersService.changeRole(+id, dto.role);
+  }
+
+  @Patch(':id/roles')
+  assignRoles(@Param('id') id: string, @Body() dto: AssignRolesDto) {
+    return this.usersService.assignRoles(+id, dto.roleIds);
   }
 
   @Delete(':id')

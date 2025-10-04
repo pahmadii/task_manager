@@ -10,14 +10,71 @@ import * as bcrypt from 'bcryptjs';
 import { User, UserRole } from '../auth/entities/user.entity';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { Logger as WinstonLogger } from 'winston';
+import { Role } from '../role/entities/role.entity';
 
 @Injectable()
 export class UsersService {
   constructor(
     @InjectRepository(User) private userRepo: Repository<User>,
+    @InjectRepository(Role) private roleRepo: Repository<Role>,
     @Inject(WINSTON_MODULE_PROVIDER)
     private readonly logger: WinstonLogger,
   ) {}
+
+  async createUser(attrs: {
+    username: string;
+    email: string;
+    phone: string;
+    password: string;
+    roleIds?: number[];
+  }): Promise<User> {
+    const exist = await this.userRepo.findOne({
+      where: [
+        { email: attrs.email },
+        { username: attrs.username },
+        { phone: attrs.phone },
+      ],
+    });
+    if (exist)
+      throw new BadRequestException(
+        'User with given email/username/phone already exists',
+      );
+
+    const hashed = await bcrypt.hash(attrs.password, 10);
+    const user = this.userRepo.create({
+      username: attrs.username,
+      email: attrs.email,
+      phone: attrs.phone,
+      password: hashed,
+      role: UserRole.USER,
+    });
+
+    if (attrs.roleIds && attrs.roleIds.length > 0) {
+      const roles = await this.roleRepo.findByIds(attrs.roleIds);
+      user.roles = roles;
+    } else {
+      user.roles = [];
+    }
+
+    const saved = await this.userRepo.save(user);
+    this.logger.info(`Admin created user: ${saved.username}`, {
+      context: 'UsersService',
+    });
+    return saved;
+  }
+
+  async assignRoles(userId: number, roleIds: number[]): Promise<User> {
+    const user = await this.findOne(userId);
+    const roles = await this.roleRepo.findByIds(roleIds);
+    if (!roles || roles.length === 0)
+      throw new BadRequestException('No valid roles found');
+    user.roles = roles;
+    const saved = await this.userRepo.save(user);
+    this.logger.info(`Assigned roles to user id=${userId}`, {
+      context: 'UsersService',
+    });
+    return saved;
+  }
 
   async findAll(query: {
     page?: number;
