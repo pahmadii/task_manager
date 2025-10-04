@@ -8,6 +8,7 @@ import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
 import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from '../src/app.module';
+import { Role } from '../src/role/entities/role.entity';
 
 const requiredEnvVars = [
   'ADMIN_USERNAME',
@@ -35,6 +36,7 @@ async function runSeed() {
     const userRepo = dataSource.getRepository(User);
     const taskRepo = dataSource.getRepository(Task);
     const permissionRepo = dataSource.getRepository(Permission);
+    const roleRepo = dataSource.getRepository(Role);
 
     const existingAdmin = await userRepo.findOne({
       where: { username: process.env.ADMIN_USERNAME! },
@@ -120,6 +122,102 @@ async function runSeed() {
     }
 
     logger.log('Permission seeding completed', 'Seed');
+    const adminRoleName = 'ADMIN';
+    const userRoleName = 'USER';
+
+    let adminRole = await roleRepo.findOne({
+      where: { name: adminRoleName },
+      relations: ['permissions'],
+    });
+    const allPerms = await permissionRepo.find();
+
+    if (!adminRole) {
+      adminRole = roleRepo.create({
+        name: adminRoleName,
+        description: 'System administrator',
+        permissions: allPerms,
+      });
+      await roleRepo.save(adminRole);
+      logger.log(`Role created: ${adminRoleName}`, 'Seed');
+    } else {
+      const existingPermNames = new Set(
+        (adminRole.permissions ?? []).map((p: Permission) => p.name),
+      );
+      const missing: Permission[] = allPerms.filter(
+        (p: Permission) => !existingPermNames.has(p.name),
+      );
+      if (missing.length > 0) {
+        adminRole.permissions = [...adminRole.permissions, ...missing];
+        await roleRepo.save(adminRole);
+        logger.log(
+          `ADMIN role updated with ${missing.length} missing permissions`,
+          'Seed',
+        );
+      } else {
+        logger.log(`Role exists: ${adminRoleName}`, 'Seed');
+      }
+    }
+
+    // USER role: subset of permissions
+    let userRole = await roleRepo.findOne({
+      where: { name: userRoleName },
+      relations: ['permissions'],
+    });
+    if (!userRole) {
+      const userPermNames = [
+        'auth:login',
+        'auth:refresh',
+        'auth:logout',
+        'profile:read',
+        'profile:update',
+        'profile:upload',
+        'task:list',
+        'task:store',
+        'task:read',
+        'task:update',
+        'task:delete',
+        'task:attachment',
+      ];
+      // fetch permissions by name safely
+      const permsByName = await permissionRepo
+        .createQueryBuilder('p')
+        .where('p.name IN (:...names)', { names: userPermNames })
+        .getMany();
+
+      userRole = roleRepo.create({
+        name: userRoleName,
+        description: 'Regular user role',
+        permissions: permsByName,
+      });
+      await roleRepo.save(userRole);
+      logger.log(`Role created: ${userRoleName}`, 'Seed');
+    } else {
+      logger.log(`Role exists: ${userRoleName}`, 'Seed');
+    }
+
+    if (savedAdmin) {
+      const adminEntity = await userRepo.findOne({
+        where: { id: savedAdmin.id },
+        relations: ['roles'],
+      });
+      if (adminEntity) {
+        const roles = (adminEntity.roles as Role[]) ?? [];
+        const hasAdmin = roles.some((r: Role) => r.name === adminRoleName);
+
+        if (!hasAdmin) {
+          adminEntity.roles = [...roles, adminRole];
+          await userRepo.save(adminEntity);
+          logger.log(`Assigned ADMIN role to ${adminEntity.username}`, 'Seed');
+        } else {
+          logger.log(`Admin already has ADMIN role`, 'Seed');
+        }
+      } else {
+        logger.warn(
+          `Saved admin user not found when trying to assign role`,
+          'Seed',
+        );
+      }
+    }
   } catch (err) {
     logger.error('Seeding failed', err, 'Seed');
   } finally {

@@ -3,6 +3,7 @@ import { DataSource } from 'typeorm';
 import { User } from './src/auth/entities/user.entity';
 import { Task } from './src/tasks/entities/task.entity';
 import { Permission } from './src/iam/entities/permission.entity';
+import { Role } from './src/role/entities/role.entity';
 
 export default new DataSource({
   type: 'postgres',
@@ -11,7 +12,7 @@ export default new DataSource({
   username: process.env.DB_USER,
   password: process.env.DB_PASS,
   database: process.env.DB_NAME,
-  entities: [Task, User, Permission],
+  entities: [Task, User, Permission, Role],
   migrations: ['migrations/*.ts'],
   synchronize: false,
 });
